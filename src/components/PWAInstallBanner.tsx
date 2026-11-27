@@ -80,7 +80,7 @@ export const PWAInstallBanner: React.FC = () => {
             Instalar PontoCerto
           </p>
           <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 leading-snug">
-            Acesse direto da tela inicial, mesmo sem internet.
+            Acesse direto da tela inicial como aplicativo.
           </p>
         </div>
 

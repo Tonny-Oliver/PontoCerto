@@ -295,10 +295,6 @@ export const ScheduleView: React.FC = () => {
                 <h2 className="font-display text-base font-bold text-slate-900">
                   Identifique-se para ver sua escala
                 </h2>
-                <p className="mt-0.5 text-xs text-slate-600">
-                  Digite seu nome ou selecione na lista de {monthTitle} ({schedules.length}{' '}
-                  {schedules.length === 1 ? 'funcionário' : 'funcionários'}).
-                </p>
               </div>
 
               <div className="p-5 space-y-4">

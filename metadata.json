@@ -1,6 +1,6 @@
 {
   "name": "PontoCerto — Calculadora de Ponto",
-  "description": "Calculadora de ponto eletrônico com validação automática das 6 regras de jornada, janelas seguras de marcação, simulador e instalação offline (PWA).",
+  "description": "Calculadora de ponto eletrônico com validação automática das regras de jornada, janelas seguras de marcação, consulta de escala mensal e instalação como aplicativo.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

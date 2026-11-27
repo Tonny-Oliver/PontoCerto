@@ -4,7 +4,7 @@ import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
 
-// Register PWA service worker immediately for offline capability & device installation
+// Register PWA service worker for device installation
 registerSW({ immediate: true });
 
 createRoot(document.getElementById('root')!).render(

@@ -24,7 +24,7 @@ export default defineConfig(() => {
           name: 'PontoCerto — Calculadora de Ponto',
           short_name: 'PontoCerto',
           description:
-            'Calculadora de ponto eletrônico e consulta de escala mensal com funcionamento offline.',
+            'Calculadora de ponto eletrônico e consulta de escala mensal.',
           theme_color: '#143B63',
           background_color: '#F8FAFC',
           display: 'standalone',
@@ -53,38 +53,13 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          navigateFallback: 'index.html',
-          navigateFallbackAllowlist: [/^\/$/, /^\/admin\/?$/],
+          globPatterns: [],
+          navigateFallback: null,
+          cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
+              urlPattern: /.*/,
+              handler: 'NetworkOnly',
             },
           ],
         },
