@@ -24,7 +24,7 @@ export default defineConfig(() => {
           name: 'PontoCerto — Calculadora de Ponto',
           short_name: 'PontoCerto',
           description:
-            'Calculadora de ponto eletrônico com validação automática das 6 regras de jornada e cálculo de horários seguros.',
+            'Calculadora de ponto eletrônico e consulta de escala mensal com funcionamento offline.',
           theme_color: '#143B63',
           background_color: '#F8FAFC',
           display: 'standalone',
@@ -55,6 +55,8 @@ export default defineConfig(() => {
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          navigateFallback: 'index.html',
+          navigateFallbackAllowlist: [/^\/$/, /^\/admin\/?$/],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

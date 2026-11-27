@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { AdminPage } from './components/AdminPage';
 import { CalculatorView } from './components/CalculatorView';
-import { InstallModal } from './components/InstallModal';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { ScheduleView } from './components/ScheduleView';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
-import { usePWAInstall } from './hooks/usePWAInstall';
 import type { AppView, DailyPunches } from './types/timecard';
 import {
   createEmptyPunches,
@@ -34,7 +33,6 @@ export default function App() {
   const [punches, setPunches] = useState<DailyPunches>(() => loadDraft());
   const [nowMinutes, setNowMinutes] = useState<number>(() => getNowMinutes());
   const [todayDate, setTodayDate] = useState<string>(() => getTodayISO());
-  const [installModalOpen, setInstallModalOpen] = useState(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -53,7 +51,6 @@ export default function App() {
   };
 
   const isOnline = useOnlineStatus();
-  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
   // Persist current draft automatically
   useEffect(() => {
@@ -100,17 +97,6 @@ export default function App() {
     setPunches(createEmptyPunches(targetDate));
   };
 
-  const handleInstallAction = async () => {
-    if (isInstallable && !isInstalled) {
-      const accepted = await install();
-      if (!accepted) {
-        setInstallModalOpen(true);
-      }
-      return;
-    }
-    setInstallModalOpen(true);
-  };
-
   if (isAdminPath(pathname)) {
     return <AdminPage onNavigateHome={handleNavigateHome} />;
   }
@@ -155,18 +141,6 @@ export default function App() {
               );
             })}
           </nav>
-
-          {/* Zone 3: 1 Primary Action (Install / Offline Download) */}
-          <div className="flex items-center shrink-0">
-            <button
-              type="button"
-              onClick={handleInstallAction}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#143B63] px-3.5 py-2 text-xs font-medium text-white hover:bg-[#0f2d4d] dark:bg-sky-600 dark:hover:bg-sky-500 transition-colors whitespace-nowrap shrink-0"
-            >
-              <Download className="h-3.5 w-3.5" />
-              {isInstalled ? 'Baixar Offline' : 'Instalar App'}
-            </button>
-          </div>
         </div>
       </header>
 
@@ -222,15 +196,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Install PWA / Download Standalone Offline HTML Modal */}
-      <InstallModal
-        isOpen={installModalOpen}
-        onClose={() => setInstallModalOpen(false)}
-        isInstallable={isInstallable}
-        isInstalled={isInstalled}
-        isIOS={isIOS}
-        onTriggerNativeInstall={install}
-      />
+      {/* Contextual Device Installation Banner (auto-hides when installed) */}
+      <PWAInstallBanner />
     </div>
   );
 }
