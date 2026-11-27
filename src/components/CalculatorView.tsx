@@ -89,10 +89,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       key: 'entry',
       step: '01',
       label: 'Entrada',
-      hint:
-        windows.entryMin !== null
-          ? `Permitida a partir de ${formatClock(windows.entryMin)} (Regra 6)`
-          : 'Início da jornada diária',
+      hint: 'Início da jornada diária',
       isNext: guidance.step === 'entry',
     },
     {
@@ -143,20 +140,6 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
         ? 'Em andamento'
         : 'Sem registro';
 
-  const nextDayDisplay =
-    windows.nextDayEntryMin !== null
-      ? formatClock(windows.nextDayEntryMin)
-      : windows.nextDayEntryMinFrom8h !== null
-        ? formatClock(windows.nextDayEntryMinFrom8h)
-        : '—';
-
-  const nextDaySub =
-    windows.nextDayEntryMin !== null
-      ? 'Amanhã (Regra 6)'
-      : windows.nextDayEntryMinFrom8h !== null
-        ? `Se sair às ${formatClock(windows.exitMinFor8h)}`
-        : 'Descanso 11h';
-
   return (
     <div className="space-y-6">
       {/* Workspace Utility Row */}
@@ -187,68 +170,18 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
         {/* Left Column: Punch Inputs */}
         <section className="lg:col-span-5 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-            <div>
+          <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5 dark:border-slate-800">
+            <div className="min-w-0">
               <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                 Marcações do Dia
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 Informe as batidas conforme o relógio de ponto
               </p>
             </div>
-            <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0 pt-0.5">
               {formatDateBR(punches.date)}
             </span>
-          </div>
-
-          {/* Previous Day Exit (Regra 6) */}
-          <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5 dark:border-slate-800 dark:bg-slate-950/40">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <label
-                  htmlFor="punch-prevExit"
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
-                >
-                  Saída do dia anterior (Regra 6 · 11h)
-                </label>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <input
-                  id="punch-prevExit"
-                  type="time"
-                  value={punches.prevExit}
-                  onChange={(e) => onChange({ prevExit: e.target.value })}
-                  className="w-30 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-mono tabular-nums text-slate-900 focus:border-[#143B63] focus:outline-none focus:ring-2 focus:ring-[#143B63]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-                {punches.prevExit && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onChange({ prevExit: '', prevExitAfterMidnight: false })
-                    }
-                    aria-label="Limpar saída anterior"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {punches.prevExit && (
-              <label className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={punches.prevExitAfterMidnight}
-                  onChange={(e) =>
-                    onChange({ prevExitAfterMidnight: e.target.checked })
-                  }
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-[#143B63] focus:ring-[#143B63]"
-                />
-                Turno anterior terminou após 00:00 (madrugada de hoje)
-              </label>
-            )}
           </div>
 
           {/* 4 Main Punch Inputs */}
@@ -258,40 +191,40 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
               return (
                 <div
                   key={row.key}
-                  className={`px-5 py-4 transition-colors ${
+                  className={`px-4 py-4 sm:px-5 transition-colors ${
                     row.isNext
                       ? 'bg-[#143B63]/[0.03] dark:bg-sky-500/[0.06]'
                       : ''
                   }`}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <label
                         htmlFor={`punch-${row.key}`}
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100"
+                        className="flex items-baseline gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100"
                       >
-                        <span className="font-mono text-xs text-slate-400 dark:text-slate-500">
+                        <span className="font-mono text-xs text-slate-400 dark:text-slate-500 shrink-0">
                           {row.step}
                         </span>
-                        <span>{row.label}</span>
+                        <span className="whitespace-nowrap">{row.label}</span>
                       </label>
-                      <p className="mt-0.5 text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                      <p className="mt-1 text-xs font-mono tabular-nums leading-relaxed text-slate-500 dark:text-slate-400">
                         {row.hint}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                       <input
                         id={`punch-${row.key}`}
                         type="time"
                         value={value}
                         onChange={(e) => onChange({ [row.key]: e.target.value })}
-                        className="w-30 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm font-mono tabular-nums text-slate-900 focus:border-[#143B63] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#143B63]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-sky-500"
+                        className="flex-1 sm:flex-none sm:w-30 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 focus:border-[#143B63] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#143B63]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-sky-500"
                       />
                       <button
                         type="button"
                         onClick={() => handlePunchNow(row.key)}
-                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
+                        className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
                       >
                         Agora
                       </button>
@@ -300,7 +233,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                           type="button"
                           onClick={() => onChange({ [row.key]: '' })}
                           aria-label={`Limpar ${row.label}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors shrink-0"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -313,10 +246,10 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
           </div>
         </section>
 
-        {/* Right Column: KPIs, Timeline & 6-Rule Audit */}
+        {/* Right Column: KPIs, Timeline & 5-Rule Audit */}
         <section className="lg:col-span-7 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-          {/* 4-Column KPI Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 border-b border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+          {/* 3-Column KPI Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 border-b border-slate-200 dark:divide-slate-800 dark:border-slate-800">
             <div className="px-5 py-4">
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 Trabalhado
@@ -370,18 +303,6 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                 Faixa 01h00–01h59
               </div>
             </div>
-
-            <div className="px-5 py-4">
-              <div className="text-xs text-slate-500 dark:text-slate-400">
-                Hora mínima para próxima entrada
-              </div>
-              <div className="mt-1 font-mono text-xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
-                {nextDayDisplay}
-              </div>
-              <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                {nextDaySub}
-              </div>
-            </div>
           </div>
 
           {/* Horizontal Timeline */}
@@ -391,12 +312,12 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
             isToday={isToday}
           />
 
-          {/* 6 Rules Verification List */}
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-3.5 dark:border-slate-800">
+          {/* 5 Rules Verification List */}
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3.5 sm:px-5 dark:border-slate-800">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Verificação das 6 Regras
+              Verificação das 5 Regras
             </h2>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums whitespace-nowrap shrink-0">
               {analysis.violationCount === 0
                 ? '0 infrações'
                 : `${analysis.violationCount} ${analysis.violationCount === 1 ? 'infração' : 'infrações'}`}
@@ -407,7 +328,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
             {analysis.rules.map((rule) => (
               <div
                 key={rule.id}
-                className={`px-5 py-3.5 transition-colors ${
+                className={`px-4 py-3.5 sm:px-5 transition-colors ${
                   rule.status === 'violation'
                     ? 'bg-red-50/60 dark:bg-red-950/20'
                     : rule.status === 'warning'
@@ -415,23 +336,23 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                       : ''
                 }`}
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <div className="flex flex-col gap-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
                   <div className="flex items-baseline gap-2 min-w-0">
-                    <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                    <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
                       {rule.code}
                     </span>
                     <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {rule.title}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <span className="text-xs font-mono tabular-nums text-slate-700 dark:text-slate-300">
                       {rule.measuredLabel}
                     </span>
                     <StatusLabel status={rule.status} />
                   </div>
                 </div>
-                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   {rule.detail}
                   {rule.limitHint ? ` · ${rule.limitHint}` : ''}
                 </p>

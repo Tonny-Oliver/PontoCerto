@@ -116,10 +116,10 @@ export function downloadStandaloneOfflineApp(): void {
     button.primary:hover { background: var(--navy-hover); }
     .kpis {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       border-bottom: 1px solid var(--border);
     }
-    @media (max-width: 600px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .kpis { grid-template-columns: 1fr; } }
     .kpi { padding: 14px 16px; border-right: 1px solid var(--border); }
     .kpi:last-child { border-right: none; }
     .kpi-label { font-size: 12px; color: var(--muted); }
@@ -139,7 +139,7 @@ export function downloadStandaloneOfflineApp(): void {
 <body>
   <header>
     <h1>PontoCerto</h1>
-    <span id="offline-today-label">Versão Offline Local · 6 Regras de Jornada</span>
+    <span id="offline-today-label">Versão Offline Local · 5 Regras de Jornada</span>
   </header>
   <main>
     <section class="banner">
@@ -153,15 +153,6 @@ export function downloadStandaloneOfflineApp(): void {
         <div class="panel-head">
           <h2>Marcações do Dia</h2>
           <button type="button" id="btn-clear">Limpar</button>
-        </div>
-        <div class="row">
-          <div>
-            <label for="prevExit">Saída do dia anterior (opcional)</label>
-            <div class="hint" id="hint-prev">Valida 11h de descanso (Regra 6)</div>
-          </div>
-          <div class="controls">
-            <input type="time" id="prevExit" />
-          </div>
         </div>
         <div class="row">
           <div>
@@ -210,7 +201,6 @@ export function downloadStandaloneOfflineApp(): void {
           <div class="kpi"><div class="kpi-label">Trabalhado</div><div class="kpi-val mono" id="k-total">—</div></div>
           <div class="kpi"><div class="kpi-label">Saldo</div><div class="kpi-val mono" id="k-bal">—</div></div>
           <div class="kpi"><div class="kpi-label">Intervalo</div><div class="kpi-val mono" id="k-lunch">—</div></div>
-          <div class="kpi"><div class="kpi-label">Próx. Entrada</div><div class="kpi-val mono" id="k-next">—</div></div>
         </div>
         <div id="rules-list"></div>
       </section>
@@ -219,7 +209,7 @@ export function downloadStandaloneOfflineApp(): void {
   <script>
     (function () {
       const STORAGE_KEY = 'pontocerto_offline_v1';
-      const ids = ['prevExit', 'entry', 'lunchOut', 'lunchIn', 'exit'];
+      const ids = ['entry', 'lunchOut', 'lunchIn', 'exit'];
       const els = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
 
       function parseM(v) {
@@ -267,7 +257,6 @@ export function downloadStandaloneOfflineApp(): void {
           const data = JSON.parse(raw);
           const today = getTodayISO();
           if (data.date && data.date !== today) {
-            if (data.exit) els.prevExit.value = data.exit;
             return;
           }
           ids.forEach((id) => { if (data[id]) els[id].value = data[id]; });
@@ -276,8 +265,6 @@ export function downloadStandaloneOfflineApp(): void {
 
       function render() {
         save();
-        const rawPrev = parseM(els.prevExit.value);
-        const prevAbs = rawPrev === null ? null : rawPrev - 1440;
         const t1 = parseM(els.entry.value);
         let t2 = parseM(els.lunchOut.value);
         if (t1 !== null && t2 !== null && t2 < t1) t2 += 1440;
@@ -294,9 +281,7 @@ export function downloadStandaloneOfflineApp(): void {
         const total = morning !== null && afternoon !== null ? morning + afternoon : null;
         const bal = total !== null ? total - 480 : null;
         const ot = total !== null ? Math.max(0, total - 480) : null;
-        const rest = prevAbs !== null && t1 !== null ? t1 - prevAbs : null;
 
-        const entryMin = prevAbs !== null ? prevAbs + 660 : null;
         const lunchOutMin = t1 !== null ? t1 + 120 : null;
         const lunchOutMax = t1 !== null ? t1 + 360 : null;
         const lunchInMin = t2 !== null ? t2 + 60 : null;
@@ -305,9 +290,8 @@ export function downloadStandaloneOfflineApp(): void {
         const exitR3 = t3 !== null ? t3 + 360 : null;
         const exitR4 = morning !== null && t3 !== null ? t3 + Math.max(0, 600 - morning) : null;
         const exitMax = exitR3 !== null && exitR4 !== null ? Math.min(exitR3, exitR4) : null;
-        const nextEntry = t4 !== null ? t4 + 660 : (exitMin !== null ? exitMin + 660 : null);
 
-        document.getElementById('hint-entry').textContent = entryMin !== null ? 'Permitida a partir de ' + fmtClock(entryMin) : 'Início da jornada';
+        document.getElementById('hint-entry').textContent = 'Início da jornada';
         document.getElementById('hint-lunchOut').textContent = lunchOutMax !== null ? 'Janela segura: ' + fmtClock(lunchOutMin) + ' até ' + fmtClock(lunchOutMax) : 'Até 6h após a entrada';
         document.getElementById('hint-lunchIn').textContent = lunchInMin !== null ? 'Janela segura: ' + fmtClock(lunchInMin) + ' até ' + fmtClock(lunchInMax) : 'Intervalo de 01h00 a 01h59';
         document.getElementById('hint-exit').textContent = exitMin !== null && exitMax !== null ? (exitMin > exitMax ? 'Conflito entre Regra 3 e Regra 5' : 'Janela segura: ' + fmtClock(exitMin) + ' até ' + fmtClock(exitMax)) : 'Mín. 8h · Máx. 2h extras / 6h após almoço';
@@ -315,7 +299,6 @@ export function downloadStandaloneOfflineApp(): void {
         document.getElementById('k-total').textContent = fmtDur(total);
         document.getElementById('k-bal').textContent = fmtDur(bal, true);
         document.getElementById('k-lunch').textContent = fmtDur(lunch);
-        document.getElementById('k-next').textContent = fmtClock(nextEntry);
 
         const rules = [
           {
@@ -347,12 +330,6 @@ export function downloadStandaloneOfflineApp(): void {
             st: total === null ? 'pend' : (total < 480 ? 'err' : 'ok'),
             val: total !== null ? fmtDur(total) + ' / 08h00' : (exitMin !== null ? 'A partir de ' + fmtClock(exitMin) : 'Aguardando'),
             det: total === null ? 'Jornada mínima diária de 8h00.' : (total < 480 ? 'Faltaram ' + fmtDur(480 - total) + ' para 8h00.' : 'Carga horária mínima atingida.')
-          },
-          {
-            name: 'Regra 6 · Descanso mínimo de 11h',
-            st: rest === null ? 'pend' : (rest < 660 ? 'err' : 'ok'),
-            val: rest !== null ? fmtDur(rest) + ' / 11h00' : (entryMin !== null ? 'A partir de ' + fmtClock(entryMin) : (t4 !== null ? 'Amanhã ' + fmtClock(t4 + 660) : 'Opcional')),
-            det: rest === null ? 'Informe a saída de ontem para validar a interjornada de hoje.' : (rest < 660 ? 'Faltaram ' + fmtDur(660 - rest) + ' de descanso.' : 'Interjornada cumprida.')
           }
         ];
 
@@ -362,8 +339,8 @@ export function downloadStandaloneOfflineApp(): void {
         const gSub = document.getElementById('g-sub');
 
         if (t1 === null) {
-          gHead.textContent = entryMin !== null ? 'Entrada permitida a partir de' : 'Comece registrando sua entrada';
-          gWin.textContent = entryMin !== null ? fmtClock(entryMin) : 'Aguardando 1ª marcação';
+          gHead.textContent = 'Comece registrando sua entrada';
+          gWin.textContent = 'Aguardando 1ª marcação';
           gSub.textContent = 'Preencha os horários do dia para receber a janela segura de cada marcação.';
         } else if (t2 === null) {
           gHead.textContent = 'Próximo ponto: Saída para Almoço';
@@ -378,9 +355,9 @@ export function downloadStandaloneOfflineApp(): void {
           gWin.textContent = exitMin > exitMax ? 'Conflito (mín ' + fmtClock(exitMin) + ' > máx ' + fmtClock(exitMax) + ')' : fmtClock(exitMin) + ' até ' + fmtClock(exitMax);
           gSub.textContent = 'Mínimo ' + fmtClock(exitMin) + ' para 8h00 (Regra 5) e máximo ' + fmtClock(exitMax) + ' (Regras 3 e 4).';
         } else {
-          gHead.textContent = errCount === 0 ? 'Jornada concluída dentro das 6 regras' : 'Jornada concluída com ' + errCount + ' infração(ões)';
+          gHead.textContent = errCount === 0 ? 'Jornada concluída dentro das 5 regras' : 'Jornada concluída com ' + errCount + ' infração(ões)';
           gWin.textContent = fmtDur(total) + ' (' + fmtDur(bal, true) + ')';
-          gSub.textContent = 'Próxima entrada permitida amanhã a partir das ' + fmtClock(t4 + 660) + ' (Regra 6).';
+          gSub.textContent = errCount === 0 ? 'Todas as 5 regras de jornada foram cumpridas.' : 'Revise os itens marcados como violados abaixo.';
         }
 
         const labelMap = { ok: 'Conforme', warn: 'Atenção', err: 'Violada', pend: 'Pendente' };

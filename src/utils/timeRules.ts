@@ -14,7 +14,6 @@ export const RULE_CONSTANTS = {
   MIN_DAILY_WORK: 480, // 8h00 (Regra 5)
   MAX_OVERTIME: 120, // 2h00 (Regra 4)
   MAX_DAILY_WORK: 600, // 10h00 (Regra 5 + Regra 4)
-  MIN_INTERSHIFT_REST: 660, // 11h00 (Regra 6)
   MIN_BEFORE_LUNCH_FOR_8H: 120, // 2h00 (needed so 8h - morning <= 6h after lunch)
 } as const;
 
@@ -103,10 +102,6 @@ export function evaluateTimecard(
   const isToday = punches.date === getTodayISO();
   const liveNow = isToday && typeof nowMinutes === 'number' ? nowMinutes : null;
 
-  const rawPrev = parseTimeToMinutes(punches.prevExit);
-  const prevExitAbs =
-    rawPrev === null ? null : punches.prevExitAfterMidnight ? rawPrev : rawPrev - 1440;
-
   const t1 = parseTimeToMinutes(punches.entry);
 
   let t2 = parseTimeToMinutes(punches.lunchOut);
@@ -157,13 +152,7 @@ export function evaluateTimecard(
       ? Math.max(0, totalWorkedMinutes - RULE_CONSTANTS.MIN_DAILY_WORK)
       : null;
 
-  const restMinutes =
-    prevExitAbs !== null && t1 !== null ? t1 - prevExitAbs : null;
-
   // Compute Safe Windows
-  const entryMin =
-    prevExitAbs !== null ? prevExitAbs + RULE_CONSTANTS.MIN_INTERSHIFT_REST : null;
-
   const lunchOutRecommendedMin =
     t1 !== null ? t1 + RULE_CONSTANTS.MIN_BEFORE_LUNCH_FOR_8H : null;
   const lunchOutMax =
@@ -198,15 +187,7 @@ export function evaluateTimecard(
     exitWindowImpossible = exitMinFor8h > exitMaxSafe;
   }
 
-  const nextDayEntryMin =
-    t4 !== null ? t4 + RULE_CONSTANTS.MIN_INTERSHIFT_REST : null;
-  const nextDayEntryMinFrom8h =
-    exitMinFor8h !== null ? exitMinFor8h + RULE_CONSTANTS.MIN_INTERSHIFT_REST : null;
-  const nextDayEntryMinFromMax =
-    exitMaxSafe !== null ? exitMaxSafe + RULE_CONSTANTS.MIN_INTERSHIFT_REST : null;
-
   const windows: SafeWindows = {
-    entryMin,
     lunchOutRecommendedMin,
     lunchOutMax,
     lunchInMin,
@@ -217,12 +198,9 @@ export function evaluateTimecard(
     exitMaxSafe,
     exitLimitingRule,
     exitWindowImpossible,
-    nextDayEntryMin,
-    nextDayEntryMinFrom8h,
-    nextDayEntryMinFromMax,
   };
 
-  // Evaluate all 6 rules individually
+  // Evaluate all 5 rules individually
   const rules: RuleEvaluation[] = [];
 
   // Regra 1: Até 6h para almoço
@@ -541,70 +519,6 @@ export function evaluateTimecard(
     });
   }
 
-  // Regra 6: Descanso mínimo de 11h
-  if (restMinutes !== null) {
-    if (restMinutes < RULE_CONSTANTS.MIN_INTERSHIFT_REST) {
-      const missing = RULE_CONSTANTS.MIN_INTERSHIFT_REST - restMinutes;
-      rules.push({
-        id: 6,
-        code: 'Regra 6',
-        title: 'Descanso mínimo de 11h',
-        shortRule: 'Interjornada mínima de 11h00',
-        status: 'violation',
-        measuredLabel: `${formatDuration(restMinutes)} / 11h00`,
-        detail: `Descanso insuficiente — faltaram ${formatDuration(missing)}. Entrada permitida era a partir de ${formatClock(entryMin)}.`,
-        limitHint:
-          nextDayEntryMin !== null
-            ? `Amanhã: entrada a partir de ${formatClock(nextDayEntryMin)}`
-            : undefined,
-      });
-    } else {
-      rules.push({
-        id: 6,
-        code: 'Regra 6',
-        title: 'Descanso mínimo de 11h',
-        shortRule: 'Interjornada mínima de 11h00',
-        status: 'ok',
-        measuredLabel: `${formatDuration(restMinutes)} / 11h00`,
-        detail: `Interjornada cumprida com folga de ${formatDuration(restMinutes - RULE_CONSTANTS.MIN_INTERSHIFT_REST)}.`,
-        limitHint:
-          nextDayEntryMin !== null
-            ? `Amanhã: entrada a partir de ${formatClock(nextDayEntryMin)}`
-            : undefined,
-      });
-    }
-  } else if (entryMin !== null) {
-    rules.push({
-      id: 6,
-      code: 'Regra 6',
-      title: 'Descanso mínimo de 11h',
-      shortRule: 'Interjornada mínima de 11h00',
-      status: 'pending',
-      measuredLabel: `A partir de ${formatClock(entryMin)}`,
-      detail: `Com saída anterior às ${punches.prevExit}, sua entrada hoje deve ser a partir das ${formatClock(entryMin)}.`,
-    });
-  } else if (nextDayEntryMin !== null) {
-    rules.push({
-      id: 6,
-      code: 'Regra 6',
-      title: 'Descanso mínimo de 11h',
-      shortRule: 'Interjornada mínima de 11h00',
-      status: 'pending',
-      measuredLabel: `Amanhã ${formatClock(nextDayEntryMin)}`,
-      detail: `Saída de ontem não informada. Com sua saída às ${formatClock(t4)}, amanhã você pode entrar a partir das ${formatClock(nextDayEntryMin)}.`,
-    });
-  } else {
-    rules.push({
-      id: 6,
-      code: 'Regra 6',
-      title: 'Descanso mínimo de 11h',
-      shortRule: 'Interjornada mínima de 11h00',
-      status: 'pending',
-      measuredLabel: 'Opcional',
-      detail: 'Informe a saída do dia anterior para validar o descanso de 11h00.',
-    });
-  }
-
   const violationCount = rules.filter((r) => r.status === 'violation').length;
   const warningCount = rules.filter((r) => r.status === 'warning').length;
   const isComplete = t1 !== null && t2 !== null && t3 !== null && t4 !== null;
@@ -616,12 +530,10 @@ export function evaluateTimecard(
   if (t1 === null) {
     guidance = {
       step: 'entry',
-      headline: entryMin !== null ? 'Entrada liberada a partir de' : 'Comece registrando sua entrada',
-      windowLabel: entryMin !== null ? formatClock(entryMin) : 'Aguardando 1ª marcação',
+      headline: 'Comece registrando sua entrada',
+      windowLabel: 'Aguardando 1ª marcação',
       subtext:
-        entryMin !== null
-          ? `Baseado na saída anterior às ${punches.prevExit}, respeitando 11h00 de descanso (Regra 6).`
-          : 'Digite a hora em que bateu o primeiro ponto ou clique em "Agora" para calcular todas as janelas seguras do dia.',
+        'Digite a hora em que bateu o primeiro ponto ou clique em "Agora" para calcular todas as janelas seguras do dia.',
       tone: 'neutral',
     };
   } else if (t2 === null) {
@@ -698,7 +610,7 @@ export function evaluateTimecard(
         : `${formatClock(exitMinFor8h)} até ${formatClock(exitMaxSafe, { showNextDayTag: true })}`,
       subtext: exitWindowImpossible
         ? `Como a manhã teve apenas ${formatDuration(morningMinutes)}, não é possível fechar 8h00 sem passar de 6h00 após o almoço.`
-        : `Mínimo ${formatClock(exitMinFor8h)} para 8h00 (Regra 5). Limite ${formatClock(exitMaxSafe)} definido por ${exitLimitingRule}. Amanhã: entrada a partir de ${formatClock(nextDayEntryMinFrom8h)} (saindo às ${formatClock(exitMinFor8h)}).`,
+        : `Mínimo ${formatClock(exitMinFor8h)} para 8h00 (Regra 5). Limite ${formatClock(exitMaxSafe)} definido por ${exitLimitingRule}.`,
       tone,
       liveNote,
     };
@@ -712,14 +624,14 @@ export function evaluateTimecard(
       windowLabel: `${formatDuration(totalWorkedMinutes)} trabalhadas (${formatDuration(balanceMinutes, true)})`,
       subtext:
         violationCount === 0
-          ? `Hora mínima para próxima entrada permitida a partir das ${formatClock(nextDayEntryMin)} (Regra 6 — 11h00 de descanso).`
-          : `Revise os itens marcados como "Violada" abaixo. Próxima entrada permitida amanhã a partir das ${formatClock(nextDayEntryMin)}.`,
+          ? 'Todas as 5 regras de jornada foram cumpridas.'
+          : 'Revise os itens marcados como "Violada" abaixo.',
       tone: violationCount === 0 ? 'ok' : 'violation',
     };
   }
 
   return {
-    normalized: { prevExitAbs, t1, t2, t3, t4 },
+    normalized: { t1, t2, t3, t4 },
     morningMinutes,
     lunchMinutes,
     afternoonMinutes,
@@ -727,7 +639,6 @@ export function evaluateTimecard(
     liveWorkedMinutes,
     balanceMinutes,
     overtimeMinutes,
-    restMinutes,
     windows,
     rules,
     guidance,
@@ -748,9 +659,7 @@ export interface SimulationPlan {
   afternoonMinutes: number;
   totalMinutes: number;
   overtimeMinutes: number;
-  nextEntryMin: string;
   valid: boolean;
-  warning?: string;
 }
 
 export function simulateSchedule(params: {
@@ -759,7 +668,6 @@ export function simulateSchedule(params: {
   morningDuration: number; // minutes, e.g. 240 (4h)
   lunchDuration: number; // minutes, 60..119
   overtimeMinutes: number; // 0..120
-  prevExit?: string;
 }): SimulationPlan | null {
   const anchor = parseTimeToMinutes(params.anchorTime);
   if (anchor === null) return null;
@@ -798,15 +706,6 @@ export function simulateSchedule(params: {
     }
   }
 
-  let warning: string | undefined;
-  const prevMin = parseTimeToMinutes(params.prevExit ?? '');
-  if (prevMin !== null) {
-    const rest = t1 - (prevMin - 1440);
-    if (rest < RULE_CONSTANTS.MIN_INTERSHIFT_REST) {
-      warning = `Atenção: entrada às ${formatClock(t1)} deixa apenas ${formatDuration(rest)} de descanso desde ontem (${params.prevExit}). Mínimo seguro pela Regra 6: ${formatClock(prevMin - 1440 + RULE_CONSTANTS.MIN_INTERSHIFT_REST)}.`;
-    }
-  }
-
   return {
     entry: formatClock(t1),
     lunchOut: formatClock(t2),
@@ -817,8 +716,6 @@ export function simulateSchedule(params: {
     afternoonMinutes,
     totalMinutes,
     overtimeMinutes: params.overtimeMinutes,
-    nextEntryMin: formatClock(t4 + RULE_CONSTANTS.MIN_INTERSHIFT_REST),
-    valid: !warning,
-    warning,
+    valid: true,
   };
 }

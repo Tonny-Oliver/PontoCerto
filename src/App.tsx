@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, WifiOff } from 'lucide-react';
+import { AdminPage } from './components/AdminPage';
 import { CalculatorView } from './components/CalculatorView';
 import { InstallModal } from './components/InstallModal';
 import { ScheduleView } from './components/ScheduleView';
@@ -22,12 +23,34 @@ const NAV_ITEMS: Array<{ id: AppView; label: string }> = [
   { id: 'schedule', label: 'Escala do Mês' },
 ];
 
+function isAdminPath(pathname: string): boolean {
+  const clean = pathname.replace(/\/+$/, '').toLowerCase();
+  return clean === '/admin';
+}
+
 export default function App() {
+  const [pathname, setPathname] = useState<string>(() => window.location.pathname);
   const [activeView, setActiveView] = useState<AppView>('calculator');
   const [punches, setPunches] = useState<DailyPunches>(() => loadDraft());
   const [nowMinutes, setNowMinutes] = useState<number>(() => getNowMinutes());
   const [todayDate, setTodayDate] = useState<string>(() => getTodayISO());
   const [installModalOpen, setInstallModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleNavigateHome = (targetView: AppView = 'calculator') => {
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+      setPathname('/');
+    }
+    setActiveView(targetView);
+  };
 
   const isOnline = useOnlineStatus();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
@@ -46,10 +69,7 @@ export default function App() {
         if (prevDay !== currentDay) {
           setPunches((prevPunches) => {
             if (prevPunches.date === prevDay) {
-              return createEmptyPunches(
-                currentDay,
-                prevPunches.exit || prevPunches.prevExit
-              );
+              return createEmptyPunches(currentDay);
             }
             return prevPunches;
           });
@@ -77,7 +97,7 @@ export default function App() {
   const handleClearPunches = () => {
     const targetDate = getTodayISO();
     setTodayDate(targetDate);
-    setPunches(createEmptyPunches(targetDate, ''));
+    setPunches(createEmptyPunches(targetDate));
   };
 
   const handleInstallAction = async () => {
@@ -90,6 +110,10 @@ export default function App() {
     }
     setInstallModalOpen(true);
   };
+
+  if (isAdminPath(pathname)) {
+    return <AdminPage onNavigateHome={handleNavigateHome} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -186,23 +210,6 @@ export default function App() {
 
         {activeView === 'schedule' && <ScheduleView />}
       </main>
-
-      {/* Quiet Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 py-5">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 sm:px-6 text-xs text-slate-500 dark:text-slate-400">
-          <span>
-            PontoCerto · Cálculos locais no navegador (nenhum dado sai do seu
-            dispositivo)
-          </span>
-          <button
-            type="button"
-            onClick={() => setInstallModalOpen(true)}
-            className="font-medium text-slate-700 hover:text-[#143B63] dark:text-slate-300 dark:hover:text-sky-400 transition-colors"
-          >
-            Instalar no sistema ou baixar versão offline
-          </button>
-        </div>
-      </footer>
 
       {/* Offline Connectivity Notice (only shown when genuinely offline) */}
       {!isOnline && (

@@ -19,8 +19,8 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
 
   if (t1 === null) {
     return (
-      <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center justify-between gap-4 mb-2">
+      <div className="px-4 py-4 sm:px-5 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 mb-2">
           <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
             Linha do tempo da jornada
           </span>
@@ -109,7 +109,7 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
     adjNow !== null && adjNow >= spanStart && adjNow <= spanEnd && t4 === null;
 
   return (
-    <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+    <div className="px-4 py-4 sm:px-5 border-b border-slate-200 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
           Linha do tempo da jornada
