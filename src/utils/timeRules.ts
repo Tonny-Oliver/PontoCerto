@@ -9,7 +9,7 @@ import type {
 export const RULE_CONSTANTS = {
   MAX_BEFORE_LUNCH: 360, // 6h00 (Regra 1)
   MIN_LUNCH: 60, // 1h00 (Regra 2)
-  MAX_LUNCH: 120, // 2h00 (Regra 2)
+  MAX_LUNCH: 119, // 1h59 — menos de 2h00 (Regra 2)
   MAX_AFTER_LUNCH: 360, // 6h00 (Regra 3)
   MIN_DAILY_WORK: 480, // 8h00 (Regra 5)
   MAX_OVERTIME: 120, // 2h00 (Regra 4)
@@ -308,15 +308,15 @@ export function evaluateTimecard(
     });
   }
 
-  // Regra 2: Intervalo de 1h a 2h
+  // Regra 2: Intervalo de 1h a 1h59 (< 2h00)
   if (lunchMinutes !== null) {
     if (lunchMinutes < RULE_CONSTANTS.MIN_LUNCH) {
       const missing = RULE_CONSTANTS.MIN_LUNCH - lunchMinutes;
       rules.push({
         id: 2,
         code: 'Regra 2',
-        title: 'Intervalo de 1h a 2h',
-        shortRule: 'Entre 01h00 e 02h00 de almoço',
+        title: 'Intervalo de 1h a 1h59',
+        shortRule: 'Entre 01h00 e 01h59 (< 2h00)',
         status: 'violation',
         measuredLabel: formatDuration(lunchMinutes),
         detail: `Intervalo curto demais — faltaram ${formatDuration(missing)} para 1h00 (mínimo às ${formatClock(lunchInMin)}).`,
@@ -326,29 +326,29 @@ export function evaluateTimecard(
       rules.push({
         id: 2,
         code: 'Regra 2',
-        title: 'Intervalo de 1h a 2h',
-        shortRule: 'Entre 01h00 e 02h00 de almoço',
+        title: 'Intervalo de 1h a 1h59',
+        shortRule: 'Entre 01h00 e 01h59 (< 2h00)',
         status: 'violation',
         measuredLabel: formatDuration(lunchMinutes),
-        detail: `Intervalo excedeu 2h00 em ${formatDuration(over)} (limite era até ${formatClock(lunchInMax)}).`,
+        detail: `Intervalo excedeu o máximo de 01h59 em ${formatDuration(over)} (fechar 2h00 viola a regra; limite era até ${formatClock(lunchInMax)}).`,
       });
     } else {
       rules.push({
         id: 2,
         code: 'Regra 2',
-        title: 'Intervalo de 1h a 2h',
-        shortRule: 'Entre 01h00 e 02h00 de almoço',
+        title: 'Intervalo de 1h a 1h59',
+        shortRule: 'Entre 01h00 e 01h59 (< 2h00)',
         status: 'ok',
         measuredLabel: formatDuration(lunchMinutes),
-        detail: 'Intervalo dentro da faixa permitida de 1h00 a 2h00.',
+        detail: 'Intervalo dentro da faixa permitida de 1h01 a 01h59 (menor que 2h00).',
       });
     }
   } else if (t2 !== null) {
     rules.push({
       id: 2,
       code: 'Regra 2',
-      title: 'Intervalo de 1h a 2h',
-      shortRule: 'Entre 01h00 e 02h00 de almoço',
+      title: 'Intervalo de 1h a 1h59',
+      shortRule: 'Entre 01h00 e 01h59 (< 2h00)',
       status: 'pending',
       measuredLabel: `${formatClock(lunchInMin)} – ${formatClock(lunchInMax)}`,
       detail: `Retorne do almoço entre ${formatClock(lunchInMin, { showNextDayTag: true })} e ${formatClock(lunchInMax, { showNextDayTag: true })}.`,
@@ -357,8 +357,8 @@ export function evaluateTimecard(
     rules.push({
       id: 2,
       code: 'Regra 2',
-      title: 'Intervalo de 1h a 2h',
-      shortRule: 'Entre 01h00 e 02h00 de almoço',
+      title: 'Intervalo de 1h a 1h59',
+      shortRule: 'Entre 01h00 e 01h59 (< 2h00)',
       status: 'pending',
       measuredLabel: 'Aguardando',
       detail: 'Informe a saída para almoço para ver a janela de retorno.',
@@ -657,10 +657,10 @@ export function evaluateTimecard(
       if (adjNow < lunchInMin) {
         liveNote = `Faltam ${formatDuration(lunchInMin - adjNow)} para completar 1h00 de intervalo`;
       } else if (adjNow <= lunchInMax) {
-        liveNote = `Retorno liberado agora · Prazo máximo termina em ${formatDuration(lunchInMax - adjNow)}`;
+        liveNote = `Retorno liberado agora · Prazo máximo (01h59) termina em ${formatDuration(lunchInMax - adjNow)}`;
         if (tone === 'neutral') tone = 'ok';
       } else {
-        liveNote = `Intervalo de 2h00 excedido há ${formatDuration(adjNow - lunchInMax)}`;
+        liveNote = `Limite de 01h59 (< 2h00) excedido há ${formatDuration(adjNow - lunchInMax)}`;
         tone = 'violation';
       }
     }
@@ -668,7 +668,7 @@ export function evaluateTimecard(
       step: 'lunchIn',
       headline: 'Próximo ponto: Volta do Almoço',
       windowLabel: `${formatClock(lunchInMin)} até ${formatClock(lunchInMax, { showNextDayTag: true })}`,
-      subtext: `O intervalo precisa ter entre 1h00 e 2h00 (Regra 2). Manhã registrada: ${formatDuration(morningMinutes)}.`,
+      subtext: `O intervalo precisa ter entre 01h00 e 01h59 (< 2h00, Regra 2). Manhã registrada: ${formatDuration(morningMinutes)}.`,
       tone,
       liveNote,
     };
@@ -712,7 +712,7 @@ export function evaluateTimecard(
       windowLabel: `${formatDuration(totalWorkedMinutes)} trabalhadas (${formatDuration(balanceMinutes, true)})`,
       subtext:
         violationCount === 0
-          ? `Próxima entrada permitida amanhã a partir das ${formatClock(nextDayEntryMin)} (Regra 6 — 11h00 de descanso).`
+          ? `Hora mínima para próxima entrada permitida a partir das ${formatClock(nextDayEntryMin)} (Regra 6 — 11h00 de descanso).`
           : `Revise os itens marcados como "Violada" abaixo. Próxima entrada permitida amanhã a partir das ${formatClock(nextDayEntryMin)}.`,
       tone: violationCount === 0 ? 'ok' : 'violation',
     };
@@ -757,7 +757,7 @@ export function simulateSchedule(params: {
   mode: 'fromEntry' | 'fromExit';
   anchorTime: string; // entry if fromEntry, exit if fromExit
   morningDuration: number; // minutes, e.g. 240 (4h)
-  lunchDuration: number; // minutes, 60..120
+  lunchDuration: number; // minutes, 60..119
   overtimeMinutes: number; // 0..120
   prevExit?: string;
 }): SimulationPlan | null {

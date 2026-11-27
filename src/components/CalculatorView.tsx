@@ -1,21 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   AlertTriangle,
-  BookmarkCheck,
   CheckCircle2,
-  Clock,
   MinusCircle,
-  Moon,
   RotateCcw,
-  Save,
-  Sun,
   X,
   XCircle,
 } from 'lucide-react';
 import type {
   DailyPunches,
   RuleEvaluation,
-  SavedRecord,
   TimecardAnalysis,
 } from '../types/timecard';
 import {
@@ -32,14 +26,8 @@ interface CalculatorViewProps {
   punches: DailyPunches;
   analysis: TimecardAnalysis;
   nowMinutes: number;
-  previousSavedRecord: SavedRecord | null;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
   onChange: (patch: Partial<DailyPunches>) => void;
   onClear: () => void;
-  onSaveRecord: () => void;
-  onLoadExample: () => void;
-  onBackToToday: () => void;
 }
 
 function StatusLabel({ status }: { status: RuleEvaluation['status'] }) {
@@ -79,49 +67,16 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
   punches,
   analysis,
   nowMinutes,
-  previousSavedRecord,
-  theme,
-  onToggleTheme,
   onChange,
   onClear,
-  onSaveRecord,
-  onLoadExample,
-  onBackToToday,
 }) => {
-  const [savedFeedback, setSavedFeedback] = useState(false);
   const isToday = punches.date === getTodayISO();
 
   const handlePunchNow = (field: 'entry' | 'lunchOut' | 'lunchIn' | 'exit') => {
     onChange({ [field]: getCurrentHHMM() });
   };
 
-  const handleSave = () => {
-    onSaveRecord();
-    setSavedFeedback(true);
-    setTimeout(() => setSavedFeedback(false), 2200);
-  };
-
   const { windows, guidance } = analysis;
-
-  const toneIcon =
-    guidance.tone === 'ok' ? (
-      <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-400 shrink-0" />
-    ) : guidance.tone === 'violation' ? (
-      <XCircle className="h-5 w-5 text-red-700 dark:text-red-400 shrink-0" />
-    ) : guidance.tone === 'warning' ? (
-      <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400 shrink-0" />
-    ) : (
-      <Clock className="h-5 w-5 text-[#143B63] dark:text-sky-400 shrink-0" />
-    );
-
-  const toneTextClass =
-    guidance.tone === 'ok'
-      ? 'text-emerald-700 dark:text-emerald-400'
-      : guidance.tone === 'violation'
-        ? 'text-red-700 dark:text-red-400'
-        : guidance.tone === 'warning'
-          ? 'text-amber-700 dark:text-amber-400'
-          : 'text-[#143B63] dark:text-sky-400';
 
   const punchRows: Array<{
     key: 'entry' | 'lunchOut' | 'lunchIn' | 'exit';
@@ -157,7 +112,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
       hint:
         windows.lunchInMin !== null
           ? `Segura: ${formatClock(windows.lunchInMin)} até ${formatClock(windows.lunchInMax, { showNextDayTag: true })}`
-          : 'Intervalo entre 1h00 e 2h00 (Regra 2)',
+          : 'Intervalo entre 01h00 e 01h59 (Regra 2)',
       isNext: guidance.step === 'lunchIn',
     },
     {
@@ -210,38 +165,13 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
           <span className="font-semibold text-slate-900 dark:text-slate-100">
             {formatDateFullBR(punches.date)}
           </span>
-          {isToday ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
-                Agora {formatClock(nowMinutes)}
-              </span>
-            </>
-          ) : (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                Registro do histórico
-              </span>
-              <button
-                type="button"
-                onClick={onBackToToday}
-                className="text-xs font-medium text-[#143B63] underline-offset-2 hover:underline dark:text-sky-400 whitespace-nowrap"
-              >
-                Voltar para hoje
-              </button>
-            </>
-          )}
+          <span aria-hidden="true">·</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+            Agora {formatClock(nowMinutes)}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onLoadExample}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0"
-          >
-            Exemplo rápido
-          </button>
           <button
             type="button"
             onClick={onClear}
@@ -250,95 +180,8 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
             <RotateCcw className="h-3.5 w-3.5" />
             Limpar
           </button>
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            aria-label={
-              theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'
-            }
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0"
-          >
-            {theme === 'dark' ? (
-              <>
-                <Sun className="h-3.5 w-3.5" />
-                Claro
-              </>
-            ) : (
-              <>
-                <Moon className="h-3.5 w-3.5" />
-                Escuro
-              </>
-            )}
-          </button>
         </div>
       </div>
-
-      {/* Focal Anchor: Next Recommended Safe Punch */}
-      <section
-        aria-live="polite"
-        className="rounded-xl border border-slate-200 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900"
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex items-center gap-2">
-              {toneIcon}
-              <span className={`text-sm font-semibold ${toneTextClass}`}>
-                {guidance.headline}
-              </span>
-            </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight font-mono tabular-nums text-slate-900 dark:text-slate-50 text-balance">
-              {guidance.windowLabel}
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-300 max-w-3xl">
-              {guidance.subtext}
-            </p>
-            {guidance.liveNote && (
-              <p className="text-xs font-mono tabular-nums font-medium text-slate-700 dark:text-slate-300 pt-0.5">
-                {guidance.liveNote}
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {guidance.step !== 'complete' && (
-              <button
-                type="button"
-                onClick={() => handlePunchNow(guidance.step as 'entry' | 'lunchOut' | 'lunchIn' | 'exit')}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#143B63] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#0f2d4d] dark:bg-sky-600 dark:hover:bg-sky-500 transition-colors whitespace-nowrap shrink-0"
-              >
-                <Clock className="h-4 w-4" />
-                Bater{' '}
-                {guidance.step === 'entry'
-                  ? 'Entrada'
-                  : guidance.step === 'lunchOut'
-                    ? 'Saída Almoço'
-                    : guidance.step === 'lunchIn'
-                      ? 'Volta Almoço'
-                      : 'Saída Final'}{' '}
-                Agora
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!punches.entry}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
-            >
-              {savedFeedback ? (
-                <>
-                  <BookmarkCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  Salvo no histórico
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  Salvar dia
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </section>
 
       {/* Main Two-Column Desktop Split */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
@@ -368,22 +211,6 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                 >
                   Saída do dia anterior (Regra 6 · 11h)
                 </label>
-                {previousSavedRecord &&
-                  previousSavedRecord.exit !== punches.prevExit && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onChange({
-                          prevExit: previousSavedRecord.exit,
-                          prevExitAfterMidnight: false,
-                        })
-                      }
-                      className="mt-0.5 text-xs font-medium text-[#143B63] underline-offset-2 hover:underline dark:text-sky-400"
-                    >
-                      Usar saída de {formatDateBR(previousSavedRecord.date)} (
-                      {previousSavedRecord.exit})
-                    </button>
-                  )}
               </div>
 
               <div className="flex items-center gap-1.5">
@@ -484,24 +311,6 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
               );
             })}
           </div>
-
-          {/* Optional Note */}
-          <div className="border-t border-slate-200 px-5 py-3.5 dark:border-slate-800">
-            <label
-              htmlFor="punch-note"
-              className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5"
-            >
-              Observação (opcional)
-            </label>
-            <input
-              id="punch-note"
-              type="text"
-              value={punches.note}
-              onChange={(e) => onChange({ note: e.target.value })}
-              placeholder="Ex.: Home office, consulta médica, plantão..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#143B63] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#143B63]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            />
-          </div>
         </section>
 
         {/* Right Column: KPIs, Timeline & 6-Rule Audit */}
@@ -550,7 +359,7 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
               <div
                 className={`mt-1 font-mono text-xl font-bold tabular-nums ${
                   analysis.lunchMinutes !== null &&
-                  (analysis.lunchMinutes < 60 || analysis.lunchMinutes > 120)
+                  (analysis.lunchMinutes < 60 || analysis.lunchMinutes > 119)
                     ? 'text-red-700 dark:text-red-400'
                     : 'text-slate-900 dark:text-slate-50'
                 }`}
@@ -558,13 +367,13 @@ export const CalculatorView: React.FC<CalculatorViewProps> = ({
                 {formatDuration(analysis.lunchMinutes)}
               </div>
               <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Faixa 01h00–02h00
+                Faixa 01h00–01h59
               </div>
             </div>
 
             <div className="px-5 py-4">
               <div className="text-xs text-slate-500 dark:text-slate-400">
-                Próxima Entrada
+                Hora mínima para próxima entrada
               </div>
               <div className="mt-1 font-mono text-xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
                 {nextDayDisplay}

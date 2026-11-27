@@ -1,22 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, WifiOff } from 'lucide-react';
 import { CalculatorView } from './components/CalculatorView';
-import { HistoryView } from './components/HistoryView';
 import { InstallModal } from './components/InstallModal';
-import { RulesView } from './components/RulesView';
-import { SimulatorView } from './components/SimulatorView';
+import { ScheduleView } from './components/ScheduleView';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { usePWAInstall } from './hooks/usePWAInstall';
-import type { AppView, DailyPunches, SavedRecord } from './types/timecard';
+import type { AppView, DailyPunches } from './types/timecard';
 import {
   createEmptyPunches,
-  findPreviousExitForDate,
   loadDraft,
-  loadHistory,
-  loadTheme,
   saveDraft,
-  saveHistory,
-  saveTheme,
 } from './utils/storage';
 import {
   evaluateTimecard,
@@ -26,46 +19,23 @@ import {
 
 const NAV_ITEMS: Array<{ id: AppView; label: string }> = [
   { id: 'calculator', label: 'Hoje' },
-  { id: 'simulator', label: 'Simulador' },
-  { id: 'history', label: 'Histórico' },
-  { id: 'rules', label: 'Regras' },
+  { id: 'schedule', label: 'Escala do Mês' },
 ];
 
 export default function App() {
   const [activeView, setActiveView] = useState<AppView>('calculator');
   const [punches, setPunches] = useState<DailyPunches>(() => loadDraft());
-  const [history, setHistory] = useState<SavedRecord[]>(() => loadHistory());
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => loadTheme());
   const [nowMinutes, setNowMinutes] = useState<number>(() => getNowMinutes());
   const [todayDate, setTodayDate] = useState<string>(() => getTodayISO());
-  const [isViewingArchivedRecord, setIsViewingArchivedRecord] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
 
   const isOnline = useOnlineStatus();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
-  // Sync dark mode class on <html>
+  // Persist current draft automatically
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    saveTheme(theme);
-  }, [theme]);
-
-  // Persist current draft automatically (only when on today's live sheet)
-  useEffect(() => {
-    if (!isViewingArchivedRecord) {
-      saveDraft(punches);
-    }
-  }, [punches, isViewingArchivedRecord]);
-
-  // Persist history automatically
-  useEffect(() => {
-    saveHistory(history);
-  }, [history]);
+    saveDraft(punches);
+  }, [punches]);
 
   // Keep live clock and current system date synchronized automatically
   useEffect(() => {
@@ -91,11 +61,6 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const previousSavedRecord = useMemo(
-    () => findPreviousExitForDate(history, punches.date),
-    [history, punches.date]
-  );
-
   const analysis = useMemo(
     () => evaluateTimecard(punches, nowMinutes),
     [punches, nowMinutes]
@@ -105,99 +70,14 @@ export default function App() {
     setPunches((prev) => ({
       ...prev,
       ...patch,
-      date: isViewingArchivedRecord ? prev.date : todayDate,
+      date: todayDate,
     }));
   };
 
   const handleClearPunches = () => {
     const targetDate = getTodayISO();
     setTodayDate(targetDate);
-    setIsViewingArchivedRecord(false);
-    const prevRec = findPreviousExitForDate(history, targetDate);
-    setPunches(createEmptyPunches(targetDate, prevRec?.exit ?? ''));
-  };
-
-  const handleBackToToday = () => {
-    const currentDay = getTodayISO();
-    setTodayDate(currentDay);
-    setIsViewingArchivedRecord(false);
-    setPunches(loadDraft());
-  };
-
-  const handleLoadExample = () => {
-    const currentDay = getTodayISO();
-    setTodayDate(currentDay);
-    setIsViewingArchivedRecord(false);
-    setPunches({
-      date: currentDay,
-      prevExit: '18:30',
-      prevExitAfterMidnight: false,
-      entry: '08:00',
-      lunchOut: '12:15',
-      lunchIn: '13:15',
-      exit: '',
-      note: 'Exemplo em andamento',
-    });
-  };
-
-  const handleSaveRecord = () => {
-    const evaluated = evaluateTimecard(punches);
-    const id = punches.date;
-    const record: SavedRecord = {
-      ...punches,
-      id,
-      savedAt: new Date().toISOString(),
-      totalWorkedMinutes: evaluated.totalWorkedMinutes,
-      balanceMinutes: evaluated.balanceMinutes,
-      violationCount: evaluated.violationCount,
-    };
-
-    setHistory((prev) => {
-      const withoutSameDate = prev.filter((item) => item.id !== id);
-      return [record, ...withoutSameDate].sort((a, b) =>
-        b.date.localeCompare(a.date)
-      );
-    });
-  };
-
-  const handleLoadRecord = (record: SavedRecord) => {
-    const currentDay = getTodayISO();
-    setTodayDate(currentDay);
-    setIsViewingArchivedRecord(record.date !== currentDay);
-    setPunches({
-      date: record.date,
-      prevExit: record.prevExit,
-      prevExitAfterMidnight: Boolean(record.prevExitAfterMidnight),
-      entry: record.entry,
-      lunchOut: record.lunchOut,
-      lunchIn: record.lunchIn,
-      exit: record.exit,
-      note: record.note,
-    });
-    setActiveView('calculator');
-  };
-
-  const handleDeleteRecord = (id: string) => {
-    setHistory((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleImportRecords = (incoming: SavedRecord[]) => {
-    setHistory((prev) => {
-      const map = new Map<string, SavedRecord>();
-      prev.forEach((r) => map.set(r.id, r));
-      incoming.forEach((r) => map.set(r.id, r));
-      return Array.from(map.values()).sort((a, b) =>
-        b.date.localeCompare(a.date)
-      );
-    });
-  };
-
-  const handleApplySimulation = (patch: Partial<DailyPunches>) => {
-    const currentDay = getTodayISO();
-    setTodayDate(currentDay);
-    setIsViewingArchivedRecord(false);
-    setPunches((prev) => ({ ...prev, ...patch, date: currentDay }));
-    setActiveView('calculator');
+    setPunches(createEmptyPunches(targetDate, ''));
   };
 
   const handleInstallAction = async () => {
@@ -271,7 +151,7 @@ export default function App() {
         aria-label="Navegação móvel"
         className="md:hidden border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-4 py-2"
       >
-        <div className="grid grid-cols-4 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
           {NAV_ITEMS.map((item) => {
             const active = activeView === item.id;
             return (
@@ -299,37 +179,12 @@ export default function App() {
             punches={punches}
             analysis={analysis}
             nowMinutes={nowMinutes}
-            previousSavedRecord={previousSavedRecord}
-            theme={theme}
-            onToggleTheme={() =>
-              setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
-            }
             onChange={handlePatchPunches}
             onClear={handleClearPunches}
-            onSaveRecord={handleSaveRecord}
-            onLoadExample={handleLoadExample}
-            onBackToToday={handleBackToToday}
           />
         )}
 
-        {activeView === 'simulator' && (
-          <SimulatorView
-            prevExitDefault={punches.prevExit || previousSavedRecord?.exit || ''}
-            onApplyToCalculator={handleApplySimulation}
-          />
-        )}
-
-        {activeView === 'history' && (
-          <HistoryView
-            records={history}
-            onLoadRecord={handleLoadRecord}
-            onDeleteRecord={handleDeleteRecord}
-            onImportRecords={handleImportRecords}
-            onGoToCalculator={() => setActiveView('calculator')}
-          />
-        )}
-
-        {activeView === 'rules' && <RulesView />}
+        {activeView === 'schedule' && <ScheduleView />}
       </main>
 
       {/* Quiet Footer */}

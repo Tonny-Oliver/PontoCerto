@@ -186,7 +186,7 @@ export function downloadStandaloneOfflineApp(): void {
         <div class="row">
           <div>
             <label for="lunchIn">3. Volta Almoço</label>
-            <div class="hint mono" id="hint-lunchIn">Intervalo de 1h00 a 2h00</div>
+            <div class="hint mono" id="hint-lunchIn">Intervalo de 01h00 a 01h59</div>
           </div>
           <div class="controls">
             <input type="time" id="lunchIn" />
@@ -300,7 +300,7 @@ export function downloadStandaloneOfflineApp(): void {
         const lunchOutMin = t1 !== null ? t1 + 120 : null;
         const lunchOutMax = t1 !== null ? t1 + 360 : null;
         const lunchInMin = t2 !== null ? t2 + 60 : null;
-        const lunchInMax = t2 !== null ? t2 + 120 : null;
+        const lunchInMax = t2 !== null ? t2 + 119 : null;
         const exitMin = morning !== null && t3 !== null ? t3 + Math.max(0, 480 - morning) : null;
         const exitR3 = t3 !== null ? t3 + 360 : null;
         const exitR4 = morning !== null && t3 !== null ? t3 + Math.max(0, 600 - morning) : null;
@@ -309,7 +309,7 @@ export function downloadStandaloneOfflineApp(): void {
 
         document.getElementById('hint-entry').textContent = entryMin !== null ? 'Permitida a partir de ' + fmtClock(entryMin) : 'Início da jornada';
         document.getElementById('hint-lunchOut').textContent = lunchOutMax !== null ? 'Janela segura: ' + fmtClock(lunchOutMin) + ' até ' + fmtClock(lunchOutMax) : 'Até 6h após a entrada';
-        document.getElementById('hint-lunchIn').textContent = lunchInMin !== null ? 'Janela segura: ' + fmtClock(lunchInMin) + ' até ' + fmtClock(lunchInMax) : 'Intervalo de 1h00 a 2h00';
+        document.getElementById('hint-lunchIn').textContent = lunchInMin !== null ? 'Janela segura: ' + fmtClock(lunchInMin) + ' até ' + fmtClock(lunchInMax) : 'Intervalo de 01h00 a 01h59';
         document.getElementById('hint-exit').textContent = exitMin !== null && exitMax !== null ? (exitMin > exitMax ? 'Conflito entre Regra 3 e Regra 5' : 'Janela segura: ' + fmtClock(exitMin) + ' até ' + fmtClock(exitMax)) : 'Mín. 8h · Máx. 2h extras / 6h após almoço';
 
         document.getElementById('k-total').textContent = fmtDur(total);
@@ -325,10 +325,10 @@ export function downloadStandaloneOfflineApp(): void {
             det: morning === null ? 'Informe entrada e saída para almoço.' : (morning > 360 ? 'Excedeu 6h00 em ' + fmtDur(morning - 360) + '.' : (morning < 120 ? 'Menos de 2h00 impede atingir 8h sem passar de 6h à tarde.' : 'Dentro do limite máximo de 6h00.'))
           },
           {
-            name: 'Regra 2 · Intervalo de 1h a 2h',
-            st: lunch === null ? 'pend' : (lunch < 60 || lunch > 120 ? 'err' : 'ok'),
+            name: 'Regra 2 · Intervalo de 1h a 1h59',
+            st: lunch === null ? 'pend' : (lunch < 60 || lunch > 119 ? 'err' : 'ok'),
             val: lunch !== null ? fmtDur(lunch) : (lunchInMin !== null ? fmtClock(lunchInMin) + ' – ' + fmtClock(lunchInMax) : 'Aguardando'),
-            det: lunch === null ? 'Intervalo obrigatório entre 1h00 e 2h00.' : (lunch < 60 ? 'Faltaram ' + fmtDur(60 - lunch) + ' para 1h00.' : (lunch > 120 ? 'Excedeu 2h00 em ' + fmtDur(lunch - 120) + '.' : 'Intervalo em conformidade.'))
+            det: lunch === null ? 'Intervalo obrigatório entre 01h00 e 01h59 (< 2h00).' : (lunch < 60 ? 'Faltaram ' + fmtDur(60 - lunch) + ' para 1h00.' : (lunch > 119 ? 'Excedeu o máximo de 01h59 em ' + fmtDur(lunch - 119) + '.' : 'Intervalo em conformidade.'))
           },
           {
             name: 'Regra 3 · Até 6h após almoço',
@@ -372,7 +372,7 @@ export function downloadStandaloneOfflineApp(): void {
         } else if (t3 === null) {
           gHead.textContent = 'Próximo ponto: Volta do Almoço';
           gWin.textContent = fmtClock(lunchInMin) + ' até ' + fmtClock(lunchInMax);
-          gSub.textContent = 'Intervalo obrigatório de 1h00 a 2h00 (Regra 2).';
+          gSub.textContent = 'Intervalo obrigatório de 01h00 a 01h59 (< 2h00, Regra 2).';
         } else if (t4 === null) {
           gHead.textContent = 'Próximo ponto: Saída Final';
           gWin.textContent = exitMin > exitMax ? 'Conflito (mín ' + fmtClock(exitMin) + ' > máx ' + fmtClock(exitMax) + ')' : fmtClock(exitMin) + ' até ' + fmtClock(exitMax);

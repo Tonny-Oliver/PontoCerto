@@ -64,7 +64,7 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
     t2 !== null && t3 !== null ? Math.max(0, toPct(t3) - lunchLeft) : 0;
   const lunchViolated =
     analysis.lunchMinutes !== null &&
-    (analysis.lunchMinutes < 60 || analysis.lunchMinutes > 120);
+    (analysis.lunchMinutes < 60 || analysis.lunchMinutes > 119);
 
   const hasAfternoon = t3 !== null;
   const afternoonEnd =

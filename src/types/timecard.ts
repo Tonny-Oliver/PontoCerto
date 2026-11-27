@@ -8,7 +8,6 @@ export interface DailyPunches {
   lunchOut: string; // HH:MM or ''
   lunchIn: string; // HH:MM or ''
   exit: string; // HH:MM or ''
-  note: string;
 }
 
 export interface RuleEvaluation {
@@ -27,7 +26,7 @@ export interface SafeWindows {
   lunchOutRecommendedMin: number | null; // entry + 2h (to allow 8h without breaking Regra 3)
   lunchOutMax: number | null; // entry + 6h (Regra 1)
   lunchInMin: number | null; // lunchOut + 1h (Regra 2)
-  lunchInMax: number | null; // lunchOut + 2h (Regra 2)
+  lunchInMax: number | null; // lunchOut + 1h59 (Regra 2)
   exitMinFor8h: number | null; // Regra 5
   exitMaxByRule3: number | null; // lunchIn + 6h
   exitMaxByRule4: number | null; // lunchIn + (10h - morning)
@@ -80,12 +79,4 @@ export interface TimecardAnalysis {
   isAllCompliant: boolean;
 }
 
-export interface SavedRecord extends DailyPunches {
-  id: string;
-  savedAt: string;
-  totalWorkedMinutes: number | null;
-  balanceMinutes: number | null;
-  violationCount: number;
-}
-
-export type AppView = 'calculator' | 'simulator' | 'history' | 'rules';
+export type AppView = 'calculator' | 'schedule';
